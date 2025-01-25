@@ -12,6 +12,7 @@ type config struct {
 	InputTarget     string `json:"input_target"`
 	OutputFile      string `json:"output_file"`
 	ViewLocalStream bool   `json:"show_local_stream"`
+	UseWebcam       bool   `json:"use_webcam"`
 }
 
 var (
