@@ -11,7 +11,7 @@ I'm not planning to work heavily on integrating it with the main repo, but rathe
   3. Feed webcam frames to server
   3. Recieve swapped webcam frames from server
 - Files:
-  1. source and target faces
+  1. Select source and target faces
   2. Select local output path
   3. Send target source to server
   3. Recieve swapped output file from server
