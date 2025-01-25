@@ -33,7 +33,6 @@ func main() {
 	// Default webcam source
 	webcam_source := 0
 
-	// Check if input is webcam int
 	if !config.Config.UseWebcam { // We expect files then
 
 		sourceEntry, sourceButton := ui.AddFileSelector("Select a source face", "Choose a file...")
