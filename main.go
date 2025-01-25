@@ -2,15 +2,15 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"log"
-	"net"
 	"strconv"
 
-	"tidy/modules/config"
-	"tidy/modules/hardware/webcam"
+	"goStreamer/modules/config"
+	"goStreamer/modules/hardware/webcam"
+	"goStreamer/modules/ui"
+	"goStreamer/modules/web"
 
-	"gocv.io/x/gocv"
+	"fyne.io/fyne"
+	"fyne.io/fyne/v2/container"
 )
 
 func init() {
@@ -18,50 +18,58 @@ func init() {
 
 }
 func main() {
+
+	var server web.Server
+
 	ctx, cancel := context.WithCancel(context.Background())
-
 	defer cancel()
+
+	ui := ui.New("GoStreamer")
+	var content *fyne.Container
+
+	sourceEntry, sourceButton := ui.AddFileSelector("Select a source face", "Choose a file...")
+
+	// Check if input is webcam int
 	inputsourceInt, err := strconv.Atoi(config.Config.InputSource)
-	if err != nil {
-		log.Fatal("Wrong device type in config..")
-	}
-	go webcam.StartFrameChannel(ctx, inputsourceInt)
+	if err != nil { // We expect files then
+		targetEntry, targetButton := ui.AddFileSelector("Select a target face", "Choose a file...")
+		outputEntry, outputButton := ui.AddOutputSelector("Select Output Folder", "Choose an output folder...")
+		outputNameEntry := ui.AddOutputFilename("Filename", "Enter filename...")
 
-	// Create a window to display the video feed (optional)
-	window := gocv.NewWindow("Camera Feed")
-	defer window.Close()
+		submitButton := ui.AddSubmitButton("Submit", func() {
+			println("Source:", sourceEntry.Text)
+			println("Target:", targetEntry.Text)
+			println("Output folder:", outputEntry.Text)
+			println("Output filename:", outputNameEntry.Text)
+		})
+		content = container.NewVBox(
+			sourceEntry, sourceButton,
+			targetEntry, targetButton,
+			outputEntry, outputButton,
+			outputNameEntry,
+			submitButton,
+		)
+	} else { // We got webcam
+		submitButton := ui.AddSubmitButton("Submit", func() {
+			println("Source:", sourceEntry.Text)
+		})
+		content = container.NewVBox(
+			sourceEntry, sourceButton,
+			submitButton,
+		)
+		go webcam.StartFrameChannel(ctx, inputsourceInt)
+		// ready up handling target and output files
 
-	// Prepare a connection to the remote computer
-	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", config.Config.IP, config.Config.PORT))
-	if err != nil {
-		log.Fatalf("Failed to connect to remote computer: %v", err)
-	}
-	defer conn.Close()
-
-	for frame := range webcam.FrameChan {
-		// Encode frame to JPEG
-		buf, err := gocv.IMEncodeWithParams(gocv.JPEGFileExt, frame.Mat, []int{gocv.IMWriteJpegQuality, 90})
-		if err != nil {
-			log.Printf("Error encoding frame: %v", err)
-			continue
-		}
-
-		// Send the encoded frame over the connection
-		_, err = conn.Write(buf.GetBytes())
-		if err != nil {
-			log.Printf("Error sending frame: %v", err)
-			break
-		}
-
-		// Display the frame locally (optional)
-		window.IMShow(frame.Mat)
-		if window.WaitKey(1) >= 0 {
-			break
-		}
-		fmt.Println("Recieved frame")
-		frame.Mat.Close()
 	}
 
-	close(webcam.FrameChan) // Close the channel explicitly
+	// Start UI
+	ui.Run(content)
 
+	server.Files.Update("", "", "")
+	// Connection to the server running face swapper
+	server.Connect()
+	defer server.Conn.Close()
+	server.WG.Add(1)
+	go server.FrameFeeder()
+	server.WG.Wait() // Wait for connection to close
 }

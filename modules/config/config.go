@@ -1,14 +1,17 @@
 package config
 
 import (
+	"goStreamer/modules/db"
 	"log"
-	"tidy/modules/db"
 )
 
 type config struct {
-	IP          string `json:"ip"`
-	PORT        int    `json:"port"`
-	InputSource string `json:"input_source"`
+	IP              string `json:"ip"`
+	PORT            int    `json:"port"`
+	InputSource     string `json:"input_source"`
+	InputTarget     string `json:"input_target"`
+	OutputFile      string `json:"output_file"`
+	ViewLocalStream bool   `json:"show_local_stream"`
 }
 
 var (
