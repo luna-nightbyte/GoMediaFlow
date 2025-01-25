@@ -17,22 +17,61 @@ import (
 	"fyne.io/fyne/v2/container"
 )
 
+var server web.Server
+
 func init() {
 	config.Config.Init("config.json")
 
 }
-func main() {
+func fileHandler(ctx context.Context, webcam_source int) {
+	server.Connect(config.Config.IP, config.Config.PORT)
+	defer server.Conn.Close()
+	for {
+		if server.Files.Source() != "" {
+			break
+		}
+	}
+	fmt.Fprintln(server.Conn, "SEND_TARGET")
+	server.Send(server.Files.Target())
 
-	var server web.Server
+	if config.Config.UseWebcam {
+		if webcam_source == -1 {
+			log.Fatal("Error setting webcam source")
+		}
+		fmt.Fprintln(server.Conn, "START_FRAMES")
+		go webcam.StartFrameChannel(ctx, webcam_source)
+		server.WG.Add(1)
+		go server.FrameFeeder()
+		server.WG.Wait()
+		fmt.Fprintln(server.Conn, "STOP_FRAMES") // Stop processing frames on server
+	} else {
+		for {
+			if server.Files.Target() != "" {
+				break
+			}
+		}
+		// Send source file if no webcam is used.
+		fmt.Fprintln(server.Conn, "SEND_SOURCE")
+		server.Send(server.Files.Source())
+	}
+	for {
+		if server.Files.Output() != "" {
+			break
+		}
+	}
+	// Receive the output file
+	fmt.Fprintln(server.Conn, "REQUEST_FILE")
+	server.Recieve()
+
+	fmt.Fprintln(server.Conn, "EXIT")
+}
+func main() {
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
 	ui := ui.New("GoStreamer")
 	var content *fyne.Container
-
-	// Default webcam source
-	webcam_source := 0
 
 	if !config.Config.UseWebcam { // We expect files then
 
@@ -56,6 +95,8 @@ func main() {
 
 			// Update files and config
 			server.Files.Update(sourceEntry.Text, targetEntry.Text, filepath.Join(outputNameEntry.Text, outputNameEntry.Text))
+
+			fileHandler(ctx, -1)
 		})
 		content = container.NewVBox(
 			sourceEntry, sourceButton,
@@ -76,7 +117,7 @@ func main() {
 				log.Fatal("Wrong webcam type!")
 			}
 			server.Files.UpdateSingle(sourceEntry.Text, webcamTarget.Text)
-			webcam_source = source
+			fileHandler(ctx, source)
 		})
 
 		content = container.NewVBox(
@@ -88,28 +129,5 @@ func main() {
 	// Start UI
 	ui.Run(content)
 	// Connection to the server running face swapper
-	server.Connect(config.Config.IP, config.Config.PORT)
-	defer server.Conn.Close()
 
-	fmt.Fprintln(server.Conn, "SEND_SOURCE")
-	server.Send(server.Files.Source())
-
-	if config.Config.UseWebcam {
-
-		fmt.Fprintln(server.Conn, "START_FRAMES")
-		go webcam.StartFrameChannel(ctx, webcam_source)
-		server.WG.Add(1)
-		go server.FrameFeeder()
-		server.WG.Wait()
-		fmt.Fprintln(server.Conn, "STOP_FRAMES") // Stop processing frames on server
-	} else {
-		// Send target file if no webcam is used.
-		fmt.Fprintln(server.Conn, "SEND_TARGET")
-		server.Send(server.Files.Target())
-	}
-	// Receive the output file
-	fmt.Fprintln(server.Conn, "REQUEST_FILE")
-	server.Recieve()
-
-	fmt.Fprintln(server.Conn, "EXIT")
 }

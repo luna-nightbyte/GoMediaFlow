@@ -17,6 +17,7 @@ type Server struct {
 // Connect establishes a connection to the remote server.
 // Blocks until connection is established
 func (s *Server) Connect(ip string, port int) {
+	fmt.Println("Connecting to server..")
 	conn, err := net.Dial("tcp", fmt.Sprintf("%s:%d", ip, port))
 	if err != nil {
 		log.Fatalf("Failed to connect to remote computer: %v", err)

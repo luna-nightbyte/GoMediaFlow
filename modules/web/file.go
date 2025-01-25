@@ -9,31 +9,27 @@ import (
 )
 
 // Send uploads the source and target files to the server.
-func (s *Server) Send() {
-	filesToSend := []string{s.Files.Source(), s.Files.Target()}
-
-	for _, filePath := range filesToSend {
-		log.Printf("Sending file: %s\n", filePath)
-		file, err := os.Open(filePath)
-		if err != nil {
-			log.Fatalf("Failed to open file: %v", err)
-		}
-		defer file.Close()
-
-		// Write the filename first
-		filename := filepath.Base(filePath)
-		_, err = s.Conn.Write([]byte(fmt.Sprintf("%s\n", filename)))
-		if err != nil {
-			log.Fatalf("Failed to send filename: %v", err)
-		}
-
-		// Send file content
-		_, err = io.Copy(s.Conn, file)
-		if err != nil {
-			log.Fatalf("Failed to send file content: %v", err)
-		}
-		log.Printf("File %s sent successfully.\n", filename)
+func (s *Server) Send(filePath string) {
+	log.Printf("Sending file: %s\n", filePath)
+	file, err := os.Open(filePath)
+	if err != nil {
+		log.Fatalf("Failed to open file: %v", err)
 	}
+	defer file.Close()
+
+	// Write the filename first
+	filename := filepath.Base(filePath)
+	_, err = s.Conn.Write([]byte(fmt.Sprintf("%s\n", filename)))
+	if err != nil {
+		log.Fatalf("Failed to send filename: %v", err)
+	}
+
+	// Send file content
+	_, err = io.Copy(s.Conn, file)
+	if err != nil {
+		log.Fatalf("Failed to send file content: %v", err)
+	}
+	log.Printf("File %s sent successfully.\n", filename)
 }
 
 // Receive downloads the output file from the server.
