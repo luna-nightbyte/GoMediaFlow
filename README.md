@@ -7,11 +7,11 @@ I'm not planning to work heavily on integrating it with the main repo, but rathe
 - Webcam:
   1. Select webcam source
   2. Select target face
-  3. Send target source to server
+  3. Send target file to server
   3. Feed webcam frames to server
   3. Recieve swapped webcam frames from server
 - Files:
   1. Select source and target faces
   2. Select local output path
-  3. Send target source to server
+  3. Send target and source files to server
   3. Recieve swapped output file from server
