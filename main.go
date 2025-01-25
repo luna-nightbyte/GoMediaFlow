@@ -2,14 +2,17 @@ package main
 
 import (
 	"context"
+	"log"
+	"path/filepath"
 	"strconv"
 
 	"goStreamer/modules/config"
+	"goStreamer/modules/files"
 	"goStreamer/modules/hardware/webcam"
 	"goStreamer/modules/ui"
 	"goStreamer/modules/web"
 
-	"fyne.io/fyne"
+	"fyne.io/fyne/v2"
 	"fyne.io/fyne/v2/container"
 )
 
@@ -27,20 +30,32 @@ func main() {
 	ui := ui.New("GoStreamer")
 	var content *fyne.Container
 
-	sourceEntry, sourceButton := ui.AddFileSelector("Select a source face", "Choose a file...")
+	// Default webcam source
+	webcam_source := 0
 
 	// Check if input is webcam int
-	inputsourceInt, err := strconv.Atoi(config.Config.InputSource)
-	if err != nil { // We expect files then
+	if !config.Config.UseWebcam { // We expect files then
+
+		sourceEntry, sourceButton := ui.AddFileSelector("Select a source face", "Choose a file...")
 		targetEntry, targetButton := ui.AddFileSelector("Select a target face", "Choose a file...")
 		outputEntry, outputButton := ui.AddOutputSelector("Select Output Folder", "Choose an output folder...")
 		outputNameEntry := ui.AddOutputFilename("Filename", "Enter filename...")
 
 		submitButton := ui.AddSubmitButton("Submit", func() {
-			println("Source:", sourceEntry.Text)
-			println("Target:", targetEntry.Text)
-			println("Output folder:", outputEntry.Text)
-			println("Output filename:", outputNameEntry.Text)
+
+			output_path := filepath.Join(outputEntry.Text, outputNameEntry.Text)
+			if !files.IsFileAndExist(sourceEntry.Text, "image") {
+				log.Fatal("Wrong input source type..")
+			}
+			if !files.IsFileAndExist(targetEntry.Text, "image") && !files.IsFileAndExist(targetEntry.Text, "video") {
+				log.Fatal("Wrong input target type..")
+			}
+			if !files.IsVideoOrImageFileName(output_path) && !files.IsVideoOrImageFileName(output_path) {
+				log.Fatal("Wrong output type..")
+			}
+
+			// Update files and config
+			server.Files.Update(sourceEntry.Text, targetEntry.Text, filepath.Join(outputNameEntry.Text, outputNameEntry.Text))
 		})
 		content = container.NewVBox(
 			sourceEntry, sourceButton,
@@ -50,26 +65,40 @@ func main() {
 			submitButton,
 		)
 	} else { // We got webcam
+		sourceEntry, sourceButton := ui.AddFileSelector("Select a source face", "Choose a file...")
+
+		webcamTarget := ui.AddOutputFilename("Filename", "Enter webgam target (default is usually 0)")
+
 		submitButton := ui.AddSubmitButton("Submit", func() {
-			println("Source:", sourceEntry.Text)
+
+			source, err := strconv.Atoi(webcamTarget.Text)
+			if err != nil {
+				log.Fatal("Wrong webcam type!")
+			}
+			server.Files.UpdateSingle(sourceEntry.Text, webcamTarget.Text)
+			webcam_source = source
 		})
+
 		content = container.NewVBox(
+			webcamTarget,
 			sourceEntry, sourceButton,
 			submitButton,
 		)
-		go webcam.StartFrameChannel(ctx, inputsourceInt)
-		// ready up handling target and output files
-
 	}
-
 	// Start UI
 	ui.Run(content)
-
-	server.Files.Update("", "", "")
 	// Connection to the server running face swapper
-	server.Connect()
+	server.Connect(config.Config.IP, config.Config.PORT)
 	defer server.Conn.Close()
-	server.WG.Add(1)
-	go server.FrameFeeder()
-	server.WG.Wait() // Wait for connection to close
+
+	server.Send()
+
+	if config.Config.UseWebcam {
+		go webcam.StartFrameChannel(ctx, webcam_source)
+		server.WG.Add(1)
+		go server.FrameFeeder()
+		server.WG.Wait()
+	}
+	// Receive the output file
+	server.Recieve()
 }
