@@ -1,32 +1,56 @@
 package web
 
 import (
-	"goStreamer/modules/config"
-	"goStreamer/modules/db"
+	"fmt"
+	"io"
+	"log"
+	"os"
+	"path/filepath"
 )
 
-type output struct {
-	source file
-	target file
-	output file
-}
-type file struct {
-	file string
+// Send uploads the source and target files to the server.
+func (s *Server) Send() {
+	filesToSend := []string{s.Files.Source(), s.Files.Target()}
+
+	for _, filePath := range filesToSend {
+		log.Printf("Sending file: %s\n", filePath)
+		file, err := os.Open(filePath)
+		if err != nil {
+			log.Fatalf("Failed to open file: %v", err)
+		}
+		defer file.Close()
+
+		// Write the filename first
+		filename := filepath.Base(filePath)
+		_, err = s.Conn.Write([]byte(fmt.Sprintf("%s\n", filename)))
+		if err != nil {
+			log.Fatalf("Failed to send filename: %v", err)
+		}
+
+		// Send file content
+		_, err = io.Copy(s.Conn, file)
+		if err != nil {
+			log.Fatalf("Failed to send file content: %v", err)
+		}
+		log.Printf("File %s sent successfully.\n", filename)
+	}
 }
 
-func (o *output) Update(source, target, output string) {
-	o.source.file = source
-	o.target.file = target
-	o.output.file = output
-	config.Config.InputSource = o.source.file
-	config.Config.InputTarget = o.target.file
-	config.Config.OutputFile = o.output.file
-	db.Write("config.json", config.Config)
-}
+// Receive downloads the output file from the server.
+func (s *Server) Recieve() {
+	outputPath := s.Files.Output()
+	log.Printf("Receiving output file: %s\n", outputPath)
 
-func (o *output) Recieve() {
+	file, err := os.Create(outputPath)
+	if err != nil {
+		log.Fatalf("Failed to create output file: %v", err)
+	}
+	defer file.Close()
 
-}
-func (o *output) Send() {
-
+	// Receive file content
+	_, err = io.Copy(file, s.Conn)
+	if err != nil {
+		log.Fatalf("Failed to receive file: %v", err)
+	}
+	log.Printf("Output file received successfully: %s\n", outputPath)
 }
