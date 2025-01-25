@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"path/filepath"
 	"strconv"
@@ -90,14 +91,25 @@ func main() {
 	server.Connect(config.Config.IP, config.Config.PORT)
 	defer server.Conn.Close()
 
-	server.Send()
+	fmt.Fprintln(server.Conn, "SEND_SOURCE")
+	server.Send(server.Files.Source())
 
 	if config.Config.UseWebcam {
+
+		fmt.Fprintln(server.Conn, "START_FRAMES")
 		go webcam.StartFrameChannel(ctx, webcam_source)
 		server.WG.Add(1)
 		go server.FrameFeeder()
 		server.WG.Wait()
+		fmt.Fprintln(server.Conn, "STOP_FRAMES") // Stop processing frames on server
+	} else {
+		// Send target file if no webcam is used.
+		fmt.Fprintln(server.Conn, "SEND_TARGET")
+		server.Send(server.Files.Target())
 	}
 	// Receive the output file
+	fmt.Fprintln(server.Conn, "REQUEST_FILE")
 	server.Recieve()
+
+	fmt.Fprintln(server.Conn, "EXIT")
 }
