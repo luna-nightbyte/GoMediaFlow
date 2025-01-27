@@ -1,15 +1,22 @@
 package main
 
+// /home/thomas/Pictures/FRS/PXL_20240305_090139715.MP.jpg
+// /home/thomas/Pictures/FRS/PXL_20240305_090144477.MP.jpg
+// /home/thomas/Desktop
+//
+
 import (
 	"context"
 	"fmt"
 	"log"
+	"os"
 	"path/filepath"
 	"strconv"
+	"time"
 
 	"goStreamer/modules/config"
-	"goStreamer/modules/files"
 	"goStreamer/modules/hardware/webcam"
+	"goStreamer/modules/local"
 	"goStreamer/modules/ui"
 	"goStreamer/modules/web"
 
@@ -21,49 +28,108 @@ var server web.Server
 
 func init() {
 	config.Config.Init("config.json")
+	os.MkdirAll(config.Config.Local.SourceFolder, os.ModePerm)
+	os.MkdirAll(config.Config.Local.Targetfolder, os.ModePerm)
+	os.MkdirAll(config.Config.Local.OutputFolder, os.ModePerm)
 
 }
-func fileHandler(ctx context.Context, webcam_source int) {
-	server.Connect(config.Config.IP, config.Config.PORT)
-	defer server.Conn.Close()
+func waitForDone(ctx context.Context, buffer []byte) bool {
+
 	for {
-		if server.Files.Source() != "" {
-			break
+		select {
+		case <-ctx.Done():
+			log.Println("Context canceled, stopping fileHandler.")
+			return false
+		default:
+			n, err := server.Conn.Read(buffer)
+			if err != nil {
+				log.Printf("Error reading from connection: %v\n", err)
+				return false
+			}
+			content := string(buffer[:n])
+			if content == "DONE" {
+				return true
+			}
 		}
 	}
-	fmt.Fprintln(server.Conn, "SEND_TARGET")
-	server.Send(server.Files.Target())
+}
+func fileHandler(ctx context.Context, webcam_source int) {
+	files, err := os.ReadDir(config.Config.Local.Targetfolder)
+	if err != nil {
+		fmt.Printf("Error reading target folder: %v\n", err)
+		return
+	}
+	for index := range files {
+		if err := server.SendFile("SEND_TARGET", filepath.Join(config.Config.Local.Targetfolder, files[index].Name())); err != nil {
+			log.Println("Error sending file:", err)
+		}
+		ok := waitForDone(ctx, make([]byte, 4096))
+		if ok {
+			fmt.Println("Finished sending file!")
+		}
+	}
 
-	if config.Config.UseWebcam {
+	if config.Config.Local.Webcam.Enable {
+		if webcam_source == -1 && config.Config.Local.Webcam.Target == "-1" {
+			log.Println("No source selected for webcam")
+			return
+		}
 		if webcam_source == -1 {
-			log.Fatal("Error setting webcam source")
+			var err error
+			webcam_source, err = strconv.Atoi(config.Config.Local.Webcam.Target)
+			if err != nil {
+				log.Println("Error setting webcam source from config")
+				return
+			}
 		}
 		fmt.Fprintln(server.Conn, "START_FRAMES")
 		go webcam.StartFrameChannel(ctx, webcam_source)
 		server.WG.Add(1)
-		go server.FrameFeeder()
+		go server.Frames.Start(&server.WG, server.Conn)
 		server.WG.Wait()
 		fmt.Fprintln(server.Conn, "STOP_FRAMES") // Stop processing frames on server
+
 	} else {
-		for {
-			if server.Files.Target() != "" {
-				break
+		// Send source file if no webcam is used.
+
+		files, err := os.ReadDir(config.Config.Local.SourceFolder)
+		if err != nil {
+			fmt.Printf("Error reading source folder: %v\n", err)
+			return
+		}
+		for index := range files {
+			if err := server.SendFile("SEND_SOURCE", filepath.Join(config.Config.Local.SourceFolder, files[index].Name())); err != nil {
+				log.Println("Error sending file:", err)
+			}
+			ok := waitForDone(ctx, make([]byte, 4096))
+			if ok {
+				fmt.Println("Finished sending file!")
 			}
 		}
-		// Send source file if no webcam is used.
-		fmt.Fprintln(server.Conn, "SEND_SOURCE")
-		server.Send(server.Files.Source())
 	}
-	for {
-		if server.Files.Output() != "" {
-			break
-		}
+	time.Sleep(500 * time.Microsecond)
+	server.Conn.Close()
+
+}
+func getFile(ctx context.Context, webcam_source int) {
+	if config.Config.Local.Webcam.Enable {
+		return
 	}
+
 	// Receive the output file
 	fmt.Fprintln(server.Conn, "REQUEST_FILE")
-	server.Recieve()
-
+	time.Sleep(500 * time.Microsecond)
+	_, err := server.ReceiveFile()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	ok := waitForDone(ctx, make([]byte, 4096))
+	if !ok {
+		log.Println("Did not reacieve done msg..")
+	}
 	fmt.Fprintln(server.Conn, "EXIT")
+	time.Sleep(500 * time.Microsecond)
 }
 func main() {
 
@@ -73,37 +139,35 @@ func main() {
 	ui := ui.New("GoStreamer")
 	var content *fyne.Container
 
-	if !config.Config.UseWebcam { // We expect files then
-
-		sourceEntry, sourceButton := ui.AddFileSelector("Select a source face", "Choose a file...")
-		targetEntry, targetButton := ui.AddFileSelector("Select a target face", "Choose a file...")
-		outputEntry, outputButton := ui.AddOutputSelector("Select Output Folder", "Choose an output folder...")
-		outputNameEntry := ui.AddOutputFilename("Filename", "Enter filename...")
-
+	if !config.Config.Local.Webcam.Enable { // We expect files then
+		sourceEntry, sourceButton := ui.AddFileSelector("Select a source folder", "Choose a folder...")
+		targetEntry, targetButton := ui.AddFileSelector("Select a target folder", "Choose a folder...")
+		outputEntry, outputButton := ui.AddOutputSelector("Select output Folder", "Choose an output folder...")
+		sourceEntry.Text = config.Config.Local.SourceFolder
+		targetEntry.Text = config.Config.Local.Targetfolder
+		outputEntry.Text = config.Config.Local.OutputFolder
 		submitButton := ui.AddSubmitButton("Submit", func() {
 
-			output_path := filepath.Join(outputEntry.Text, outputNameEntry.Text)
-			if !files.IsFileAndExist(sourceEntry.Text, "image") {
-				log.Fatal("Wrong input source type..")
-			}
-			if !files.IsFileAndExist(targetEntry.Text, "image") && !files.IsFileAndExist(targetEntry.Text, "video") {
-				log.Fatal("Wrong input target type..")
-			}
-			if !files.IsVideoOrImageFileName(output_path) && !files.IsVideoOrImageFileName(output_path) {
-				log.Fatal("Wrong output type..")
-			}
-
 			// Update files and config
-			server.Files.Update(sourceEntry.Text, targetEntry.Text, filepath.Join(outputNameEntry.Text, outputNameEntry.Text))
+			local.Files.Update(sourceEntry.Text, targetEntry.Text, outputEntry.Text)
 
+			server.Connect(config.Config.Server.IP, config.Config.Server.DialPort)
+			defer server.Conn.Close()
 			fileHandler(ctx, -1)
+		})
+
+		getFileButton := ui.AddSubmitButton("Get swapped", func() {
+
+			server.Connect(config.Config.Server.IP, config.Config.Server.DialPort)
+			defer server.Conn.Close()
+			getFile(ctx, -1)
 		})
 		content = container.NewVBox(
 			sourceEntry, sourceButton,
 			targetEntry, targetButton,
 			outputEntry, outputButton,
-			outputNameEntry,
 			submitButton,
+			getFileButton,
 		)
 	} else { // We got webcam
 		sourceEntry, sourceButton := ui.AddFileSelector("Select a source face", "Choose a file...")
@@ -114,9 +178,9 @@ func main() {
 
 			source, err := strconv.Atoi(webcamTarget.Text)
 			if err != nil {
-				log.Fatal("Wrong webcam type!")
+				log.Println("Wrong webcam type!")
 			}
-			server.Files.UpdateSingle(sourceEntry.Text, webcamTarget.Text)
+			local.Files.UpdateSingle(sourceEntry.Text, webcamTarget.Text)
 			fileHandler(ctx, source)
 		})
 
@@ -128,6 +192,7 @@ func main() {
 	}
 	// Start UI
 	ui.Run(content)
+
 	// Connection to the server running face swapper
 
 }

@@ -1,52 +1,106 @@
 package web
 
 import (
+	"encoding/json"
 	"fmt"
+	"goStreamer/modules/config"
 	"io"
 	"log"
 	"os"
 	"path/filepath"
+	"time"
 )
 
-// Send uploads the source and target files to the server.
-func (s *Server) Send(filePath string) {
-	log.Printf("Sending file: %s\n", filePath)
-	file, err := os.Open(filePath)
-	if err != nil {
-		log.Fatalf("Failed to open file: %v", err)
-	}
-	defer file.Close()
-
-	// Write the filename first
-	filename := filepath.Base(filePath)
-	_, err = s.Conn.Write([]byte(fmt.Sprintf("%s\n", filename)))
-	if err != nil {
-		log.Fatalf("Failed to send filename: %v", err)
-	}
-
-	// Send file content
-	_, err = io.Copy(s.Conn, file)
-	if err != nil {
-		log.Fatalf("Failed to send file content: %v", err)
-	}
-	log.Printf("File %s sent successfully.\n", filename)
+// Header represents the metadata for a file transfer.
+type Header struct {
+	Command  string `json:"command"`
+	FileName string `json:"file_name"`
+	FileSize int64  `json:"file_size"`
 }
 
-// Receive downloads the output file from the server.
-func (s *Server) Recieve() {
-	outputPath := s.Files.Output()
-	log.Printf("Receiving output file: %s\n", outputPath)
-
-	file, err := os.Create(outputPath)
+// SendFile streams a file to the remote server.
+func (s *Server) SendFile(command, filePath string) error {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+	file, err := os.Open(filePath)
 	if err != nil {
-		log.Fatalf("Failed to create output file: %v", err)
+		return fmt.Errorf("failed to open file: %v", err)
 	}
 	defer file.Close()
 
-	// Receive file content
-	_, err = io.Copy(file, s.Conn)
+	// Get the file size
+	stat, err := file.Stat()
 	if err != nil {
-		log.Fatalf("Failed to receive file: %v", err)
+		return fmt.Errorf("failed to stat file: %v", err)
 	}
-	log.Printf("Output file received successfully: %s\n", outputPath)
+	fileSize := stat.Size()
+
+	// Prepare header as JSON
+	header := Header{
+		Command:  command,
+		FileName: stat.Name(),
+		FileSize: fileSize,
+	}
+	headerData, err := json.Marshal(header)
+	if err != nil {
+		return fmt.Errorf("failed to marshal header: %v", err)
+	}
+
+	// Send header length and data
+	if _, err = s.Conn.Write(headerData); err != nil {
+		return fmt.Errorf("failed to send header: %v", err)
+	}
+	time.Sleep(1 * time.Second)
+	// Stream the file
+	_, err = io.Copy(s.Conn, file)
+	if err != nil {
+		return fmt.Errorf("failed to send file: %v", err)
+	}
+
+	return nil
+}
+
+// ReceiveFile receives a file from the remote connection and saves it locally.
+func (s *Server) ReceiveFile() (string, error) {
+	s.mux.Lock()
+	defer s.mux.Unlock()
+
+	// Read header data
+	headerData := make([]byte, 1024)
+	n, err := s.Conn.Read(headerData)
+	if err != nil {
+		return "", fmt.Errorf("failed to read header: %v", err)
+	}
+
+	var header Header
+	if err := json.Unmarshal(headerData[:n], &header); err != nil {
+		return "", fmt.Errorf("failed to unmarshal header: %v", err)
+	}
+	if header.FileName == "" {
+		return "", fmt.Errorf("unknown filetype in header: %v", header)
+	}
+	// Create a new file locally to save the received data
+	outFilePath := filepath.Join(config.Config.Local.OutputFolder, header.FileName)
+	outFile, err := os.Create(outFilePath)
+	if err != nil {
+		return "", fmt.Errorf("failed to create output file: %v", err)
+	}
+	defer outFile.Close()
+
+	// Receive file data
+	_, err = io.CopyN(outFile, s.Conn, header.FileSize)
+	if err != nil {
+		return "", fmt.Errorf("failed to receive file: %v", err)
+	}
+
+	log.Println("File received successfully:", outFilePath)
+	return outFilePath, nil
+}
+
+// Close cleans up resources.
+func (s *Server) Close() {
+	if s.Conn != nil {
+		s.Conn.Close()
+	}
+	fmt.Println("Connection closed.")
 }
