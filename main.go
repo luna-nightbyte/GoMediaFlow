@@ -111,7 +111,7 @@ func fileHandler(ctx context.Context, webcam_source int) {
 	server.Conn.Close()
 
 }
-func getFile(ctx context.Context, webcam_source int) {
+func getFile(ctx context.Context) {
 	if config.Config.Local.Webcam.Enable {
 		return
 	}
@@ -160,7 +160,7 @@ func main() {
 
 			server.Connect(config.Config.Server.IP, config.Config.Server.DialPort)
 			defer server.Conn.Close()
-			getFile(ctx, -1)
+			getFile(ctx)
 		})
 		content = container.NewVBox(
 			sourceEntry, sourceButton,

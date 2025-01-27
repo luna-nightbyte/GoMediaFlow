@@ -16,7 +16,7 @@ type FrameFeeder struct {
 
 func (f *FrameFeeder) Start(wg *sync.WaitGroup, conn net.Conn) {
 	defer wg.Done()
-	defer f.cleanup(conn)
+	defer f.cleanup()
 
 	var window *gocv.Window
 	if config.Config.Local.Webcam.Enable {
@@ -53,9 +53,6 @@ func (f *FrameFeeder) Start(wg *sync.WaitGroup, conn net.Conn) {
 	log.Println("Frame feeder stopped.")
 }
 
-func (f *FrameFeeder) cleanup(conn net.Conn) {
+func (f *FrameFeeder) cleanup() {
 	close(webcam.FrameChan)
-	//if err := conn.Close(); err != nil {
-	//	log.Printf("Error closing connection: %v", err)
-	//}
 }
