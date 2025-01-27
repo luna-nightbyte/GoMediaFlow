@@ -1,38 +1,73 @@
 # GoStreamer
-This is a project ment to go hand-in-hand with my [fork](https://github.com/luna-nightbyte/Deep-Batch-Swapper) of [Deep-Live-cam](https://github.com/hacksider/Deep-Live-Cam). The [initial](https://github.com/luna-nightbyte/goStreamer/tree/7a11960a2febc5066cbff2745f5e0d338cb6b8b2) commit was tested and worked to simply send the webcam feed to a server running live [face-swapping](https://github.com/luna-nightbyte/Deep-Batch-Swapper/tree/02a9efdb34db5b890efe05ccb176e258cb9d6b8e). 
 
-I'm not planning to work heavily on integrating it with the main repo, but rather my own [fork](https://github.com/luna-nightbyte/Deep-Batch-Swapper) where im using no-UI anyways. 
+GoStreamer is a tool for streaming and processing video frames from a webcam or files. It allows you to configure the server connection, select source and target files or webcam, and receive processed output.
 
+## Setup
 
-# Setup
-Modify `config.json` to setup connection settings, and to enable/disable webcam. Folders can be set here, but it is also available to change in the UI.
-```
-{
-  "server": {
-    "ip": "192.168.1.2",
-    "port": 8050
-  },
-  "local": {
-    "webcam": {
-      "enable": false,
-      "target": "-1"
-    },
-    "source_folder": "sources",
-    "target_folder": "targets",
-    "output_folder": "output"
-  }
-}
-```
+1. **Modify `config.json`** to set up connection settings and to enable/disable the webcam. Folders can be set here, but it is also available to change in the UI.
 
-## Future features
-- Webcam:
+    ```json
+    {
+      "server": {
+        "ip": "192.168.1.2",
+        "port": 8050
+      },
+      "local": {
+        "webcam": {
+          "enable": false,
+          "target": "-1"
+        },
+        "source_folder": "sources",
+        "target_folder": "targets",
+        "output_folder": "output"
+      }
+    }
+    ```
+
+2. **Install dependencies** by running:
+
+    ```sh
+    go mod tidy
+    ```
+
+## Running the Application
+
+2. **Run the main application**:
+
+    ```sh
+    go run main.go
+    ```
+
+    This will start the server on the port set in `config.json`.
+    This will start the GoStreamer UI.
+
+## Usage
+
+### Using Files
+
+1. **Select Source Folder**: Choose the folder containing source files.
+2. **Select Target Folder**: Choose the folder containing target files.
+3. **Select Output Folder**: Choose the folder where the output will be saved.
+4. **Submit**: Click the "Submit" button to start processing.
+5. **Get Swapped**: Click the "Get swapped" button to receive the processed files.
+
+### Using Webcam
+
+1. **Select Source Face**: Choose a file for the source face.
+2. **Enter Webcam Target**: Enter the webcam target (default is usually 0).
+3. **Submit**: Click the "Submit" button to start streaming and processing frames.
+
+## Future Features
+
+- **Webcam**:
   1. Select webcam source
   2. Select target face
   3. Send target file to server
-  3. Feed webcam frames to server
-  3. Recieve swapped webcam frames from server
-- Files:
+  4. Feed webcam frames to server
+  5. Receive swapped webcam frames from server
+
+- **Files**:
   1. Select source and target faces
   2. Select local output path
   3. Send target and source files to server
-  3. Recieve swapped output file from server
+  4. Receive swapped output file from server
