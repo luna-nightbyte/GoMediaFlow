@@ -140,9 +140,9 @@ func main() {
 	var content *fyne.Container
 
 	if !config.Config.Local.Webcam.Enable { // We expect files then
-		sourceEntry, sourceButton := ui.AddFileSelector("Select a source folder", "Choose a folder...")
-		targetEntry, targetButton := ui.AddFileSelector("Select a target folder", "Choose a folder...")
-		outputEntry, outputButton := ui.AddOutputSelector("Select output Folder", "Choose an output folder...")
+		sourceEntry, sourceButton := ui.AddFolderSelector("Select a source folder", "Choose a folder...")
+		targetEntry, targetButton := ui.AddFolderSelector("Select a target folder", "Choose a folder...")
+		outputEntry, outputButton := ui.AddFolderSelector("Select output Folder", "Choose an output folder...")
 		sourceEntry.Text = config.Config.Local.SourceFolder
 		targetEntry.Text = config.Config.Local.Targetfolder
 		outputEntry.Text = config.Config.Local.OutputFolder
