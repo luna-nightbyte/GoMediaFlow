@@ -8,8 +8,8 @@
       "enable": false,
       "target": "-1"
     },
-    "source_folder": "output",
-    "target_folder": "sources",
+    "source_folder": "sources",
+    "target_folder": "targets",
     "output_folder": "output"
   }
 }
