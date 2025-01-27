@@ -1,9 +1,8 @@
-package files
+package local
 
 import (
 	"errors"
 	"goStreamer/modules/config"
-	"goStreamer/modules/db"
 	"log"
 	"net/http"
 	"os"
@@ -11,30 +10,34 @@ import (
 	"strings"
 )
 
+var Files Output
+
 type Output struct {
-	source file
-	target file
-	output file
+	source folder
+	target folder
+	output folder
 }
-type file struct {
-	file string
-}
-
-func (o *Output) Update(source, target, output string) {
-	o.source.file = source
-	o.target.file = target
-	o.output.file = output
-	config.Config.InputSource = o.source.file
-	config.Config.InputTarget = o.target.file
-	config.Config.OutputFile = o.output.file
-	db.Write("config.json", config.Config)
+type folder struct {
+	folder string
 }
 
-func (o *Output) UpdateSingle(source, webcam string) {
-	o.source.file = source
-	config.Config.InputSource = o.source.file
-	config.Config.InputTarget = webcam
-	db.Write("config.json", config.Config)
+func (o *Output) Update(sourceFolder, targetFolder, outputFolder string) {
+	o.source.set(sourceFolder)
+	o.target.set(targetFolder)
+	o.output.set(outputFolder)
+	config.Config.Local.SourceFolder = sourceFolder
+	config.Config.Local.SourceFolder = targetFolder
+	config.Config.Local.SourceFolder = outputFolder
+	config.Config.Update()
+}
+func (f *folder) set(input string) {
+	f.folder = input
+}
+func (o *Output) UpdateSingle(sourceFolder, webcamTarget string) {
+	o.source.folder = sourceFolder
+	config.Config.Local.SourceFolder = sourceFolder
+	config.Config.Local.Webcam.Target = webcamTarget
+	config.Config.Update()
 }
 
 // IsFile checks if the file is a video based on its MIME type.
@@ -76,15 +79,15 @@ func isFileOfType(filePath string, fileType string) (bool, error) {
 }
 
 func (o *Output) Source() string {
-	return o.source.file
+	return o.source.folder
 }
 
 func (o *Output) Target() string {
-	return o.target.file
+	return o.target.folder
 }
 
 func (o *Output) Output() string {
-	return o.output.file
+	return o.output.folder
 }
 
 func IsVideoOrImageFileName(fileName string) bool {
