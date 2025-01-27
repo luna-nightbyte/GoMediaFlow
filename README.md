@@ -3,6 +3,27 @@ This is a project ment to go hand-in-hand with my [fork](https://github.com/luna
 
 I'm not planning to work heavily on integrating it with the main repo, but rather my own [fork](https://github.com/luna-nightbyte/Deep-Batch-Swapper) where im using no-UI anyways. 
 
+
+# Setup
+Modify `config.json` to setup connection settings, and to enable/disable webcam. Folders can be set here, but it is also available to change in the UI.
+```
+{
+  "server": {
+    "ip": "192.168.1.2",
+    "port": 8050
+  },
+  "local": {
+    "webcam": {
+      "enable": false,
+      "target": "-1"
+    },
+    "source_folder": "sources",
+    "target_folder": "targets",
+    "output_folder": "output"
+  }
+}
+```
+
 ## Future features
 - Webcam:
   1. Select webcam source
