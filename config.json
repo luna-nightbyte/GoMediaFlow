@@ -1,9 +1,15 @@
 {
+  "server": {
     "ip": "192.168.1.2",
-    "port": 5000,
-    "input_source": "output/source/test.jpg",
-    "input_target": "output/target/test.jpg",
-    "output_file": "output/swapped/test.jpg",
-    "show_local_stream": false,
-    "use_webcam": true
+    "port": 8050
+  },
+  "local": {
+    "webcam": {
+      "enable": false,
+      "target": "-1"
+    },
+    "source_folder": "output",
+    "target_folder": "sources",
+    "output_folder": "output"
+  }
 }

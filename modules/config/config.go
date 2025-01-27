@@ -6,13 +6,23 @@ import (
 )
 
 type config struct {
-	IP              string `json:"ip"`
-	PORT            int    `json:"port"`
-	InputSource     string `json:"input_source"`
-	InputTarget     string `json:"input_target"`
-	OutputFile      string `json:"output_file"`
-	ViewLocalStream bool   `json:"show_local_stream"`
-	UseWebcam       bool   `json:"use_webcam"`
+	Server server `json:"server"`
+	Local  local  `json:"local"`
+}
+
+type server struct {
+	IP       string `json:"ip"`
+	DialPort int    `json:"port"`
+}
+type local struct {
+	Webcam       webcam `json:"webcam"`
+	SourceFolder string `json:"source_folder"`
+	Targetfolder string `json:"target_folder"`
+	OutputFolder string `json:"output_folder"`
+}
+type webcam struct {
+	Enable bool   `json:"enable"`
+	Target string `json:"target"`
 }
 
 var (
@@ -32,4 +42,39 @@ func (c *config) Init(path string) {
 		log.Fatal("Error reading config: ", err)
 		return
 	}
+}
+func (c *config) Update() {
+	var tmpConfig config
+	tmpConfig.read()
+	c.write()
+	if !c.verify() {
+		tmpConfig.write()
+	}
+}
+
+func (c *config) verify() bool {
+	ok, err := db.Check(Path, &c)
+	if !ok {
+		log.Fatal("Config error: ", err)
+		return false
+	}
+	return true
+}
+
+func (c *config) read() bool {
+	err := db.Read(Path, &c)
+	if err != nil {
+		log.Println("Error reading config: ", err)
+		return false
+	}
+	return true
+}
+
+func (c *config) write() bool {
+	err := db.Write(Path, &c)
+	if err != nil {
+		log.Println("Error writing config: ", err)
+		return false
+	}
+	return true
 }
