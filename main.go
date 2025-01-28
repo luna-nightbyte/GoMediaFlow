@@ -1,10 +1,5 @@
 package main
 
-// /home/thomas/Pictures/FRS/PXL_20240305_090139715.MP.jpg
-// /home/thomas/Pictures/FRS/PXL_20240305_090144477.MP.jpg
-// /home/thomas/Desktop
-//
-
 import (
 	"context"
 	"log"
