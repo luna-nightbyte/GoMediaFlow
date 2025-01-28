@@ -19,6 +19,9 @@ type local struct {
 	SourceFolder string `json:"source_folder"`
 	Targetfolder string `json:"target_folder"`
 	OutputFolder string `json:"output_folder"`
+	LastSource   string `json:"last_source"`
+	LastTarget   string `json:"last_target"`
+	LastSwapped  string `json:"last_swapped"`
 }
 type webcam struct {
 	Enable bool   `json:"enable"`
@@ -77,4 +80,20 @@ func (c *config) write() bool {
 		return false
 	}
 	return true
+}
+
+func (c *config) UpdateLastFiles(source, target, swapped string) {
+	c.Local.LastSource = source
+	c.Local.LastTarget = target
+	c.Local.LastSwapped = swapped
+	c.Update()
+}
+func (c *config) LastSource() string {
+	return c.Local.LastSource
+}
+func (c *config) LastTarget() string {
+	return c.Local.LastTarget
+}
+func (c *config) LastSwapped() string {
+	return c.Local.LastSwapped
 }
