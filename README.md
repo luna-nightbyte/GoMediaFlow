@@ -10,27 +10,40 @@ Some future planned fueatures are
 ## Setup
 
 1. **Modify `config.json`** to set up connection settings and to enable/disable the webcam. Folders can be set here, but it is also available to change in the UI.
-
-    ```json
-    {
-      "server": {
+```
+  {
+    "server": {
+      "network": {
+        "ip": "192.168.1.10",
+        "port": 8080
+      }
+    },
+    "client": {
+      "network": {
         "ip": "192.168.1.2",
-        "port": 8050
+        "port": 8081
       },
-      "local": {
-        "webcam": {
-          "enable": false,
-          "target": "-1"
+      "webcam": {
+        "enable": false,
+        "target": "-1"
+      },
+      "files": {
+        "source": {
+          "folder": "/path/to/source",
+          "last": "/path/to/last/source"
         },
-        "source_folder": "sources",
-        "target_folder": "targets",
-        "output_folder": "output",
-        "last_source": "",
-        "last_target": "",
-        "last_swapped": ""
+        "target": {
+          "folder": "/path/to/target",
+          "last": "/path/to/last/target"
+        },
+        "output": {
+          "folder": "/path/to/output",
+          "last": "/path/to/last/output"
+        }
       }
     }
-    ```
+  }
+```
 
 2. **Install dependencies** by running:
 
