@@ -2,6 +2,11 @@
 
 GoStreamer is a tool for streaming and processing video frames from a webcam or files. It allows you to configure the server connection, select source and target files or webcam, and receive processed output.
 
+It is only possible to send and recieve files manually as of now. 
+
+Some future planned fueatures are 
+  - adjusting server setting via client UI
+  - auto upload
 ## Setup
 
 1. **Modify `config.json`** to set up connection settings and to enable/disable the webcam. Folders can be set here, but it is also available to change in the UI.
@@ -19,7 +24,10 @@ GoStreamer is a tool for streaming and processing video frames from a webcam or 
         },
         "source_folder": "sources",
         "target_folder": "targets",
-        "output_folder": "output"
+        "output_folder": "output",
+        "last_source": "",
+        "last_target": "",
+        "last_swapped": ""
       }
     }
     ```
@@ -49,7 +57,7 @@ GoStreamer is a tool for streaming and processing video frames from a webcam or 
 2. **Select Target Folder**: Choose the folder containing target files.
 3. **Select Output Folder**: Choose the folder where the output will be saved.
 4. **Submit**: Click the "Submit" button to start processing.
-5. **Get Swapped**: Click the "Get swapped" button to receive the processed files.
+5. **Get Swapped**: Click the "Get swapped" button to receive the processed files. (Will be replaced by auto upload in the future.
 
 ### Using Webcam
 
