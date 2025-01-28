@@ -78,15 +78,13 @@ func isFileOfType(filePath string, fileType string) (bool, error) {
 	return mimeType[0] == fileType, nil
 }
 
-func (o *Output) Source() string {
+func (o *Output) SourceFolder() string {
 	return o.source.folder
 }
-
-func (o *Output) Target() string {
+func (o *Output) TargetFolder() string {
 	return o.target.folder
 }
-
-func (o *Output) Output() string {
+func (o *Output) OutputFolder() string {
 	return o.output.folder
 }
 
