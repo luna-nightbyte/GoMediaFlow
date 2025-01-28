@@ -11,8 +11,8 @@ import (
 	"os"
 	"strconv"
 
-	"goStreamer/modules/config"
 	"goStreamer/modules/local"
+	"goStreamer/modules/settings"
 	"goStreamer/modules/ui"
 	"goStreamer/modules/web"
 
@@ -23,10 +23,10 @@ import (
 var server web.Server
 
 func init() {
-	config.Settings.Init("config.json")
-	os.MkdirAll(config.Settings.Client.Source(), os.ModePerm)
-	os.MkdirAll(config.Settings.Client.Target(), os.ModePerm)
-	os.MkdirAll(config.Settings.Client.Swapped(), os.ModePerm)
+	settings.Settings.Init("settings.json")
+	os.MkdirAll(settings.Settings.Client.Source(), os.ModePerm)
+	os.MkdirAll(settings.Settings.Client.Target(), os.ModePerm)
+	os.MkdirAll(settings.Settings.Client.Swapped(), os.ModePerm)
 
 }
 
@@ -38,26 +38,26 @@ func main() {
 	ui := ui.New("GoStreamer")
 	var content *fyne.Container
 
-	if !config.Settings.Client.Webcam.Enable { // We expect files then
+	if !settings.Settings.Client.Webcam.Enable { // We expect files then
 		sourceEntry, sourceButton := ui.AddFolderSelector("Select a source folder", "Choose a folder...")
 		targetEntry, targetButton := ui.AddFolderSelector("Select a target folder", "Choose a folder...")
 		outputEntry, outputButton := ui.AddFolderSelector("Select output Folder", "Choose an output folder...")
-		sourceEntry.Text = config.Settings.Client.Source()
-		targetEntry.Text = config.Settings.Client.Target()
-		outputEntry.Text = config.Settings.Client.Swapped()
+		sourceEntry.Text = settings.Settings.Client.Source()
+		targetEntry.Text = settings.Settings.Client.Target()
+		outputEntry.Text = settings.Settings.Client.Swapped()
 		submitButton := ui.AddSubmitButton("Submit", func() {
 
 			// Update files and config
 			local.Files.Update(sourceEntry.Text, targetEntry.Text, outputEntry.Text)
 
-			server.Connect(config.Settings.Server.Net.IP, config.Settings.Server.Net.Port)
+			server.Connect(settings.Settings.Server.Net.IP, settings.Settings.Server.Net.Port)
 			defer server.Conn.Close()
 			ui.HandleUI(&server, ctx, -1)
 		})
 
 		getFileButton := ui.AddSubmitButton("Get swapped", func() {
 
-			server.Connect(config.Settings.Server.Net.IP, config.Settings.Server.Net.Port)
+			server.Connect(settings.Settings.Server.Net.IP, settings.Settings.Server.Net.Port)
 			defer server.Conn.Close()
 			err := server.GetFile(ctx)
 			if err != nil {
