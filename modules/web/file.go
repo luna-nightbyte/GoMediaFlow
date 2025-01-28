@@ -15,10 +15,11 @@ import (
 
 // Header represents the metadata for a file transfer.
 type Header struct {
-	ClientIP string `json:"client_ip"`
-	Command  string `json:"command"`
-	FileName string `json:"file_name"`
-	FileSize int64  `json:"file_size"`
+	ClientIP   string `json:"client_ip"`
+	ClientPort int    `json:"client_port"`
+	Command    string `json:"command"`
+	FileName   string `json:"file_name"`
+	FileSize   int64  `json:"file_size"`
 }
 
 // SendFile streams a file to the remote server.
@@ -40,10 +41,11 @@ func (s *Server) SendFile(command, filePath string) error {
 
 	// Prepare header as JSON
 	header := Header{
-		ClientIP: settings.Settings.Client.Net.IP,
-		Command:  command,
-		FileName: stat.Name(),
-		FileSize: fileSize,
+		ClientIP:   settings.Settings.Client.Net.IP,
+		ClientPort: settings.Settings.Client.Net.Port,
+		Command:    command,
+		FileName:   stat.Name(),
+		FileSize:   fileSize,
 	}
 	headerData, err := json.Marshal(header)
 	if err != nil {
