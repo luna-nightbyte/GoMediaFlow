@@ -67,7 +67,7 @@ func (c *settings) Update() {
 func (c *settings) verify() bool {
 	ok, err := db.Check(Path, &c)
 	if !ok {
-		log.Fatal("Config error: ", err)
+		log.Println("Config error: ", err)
 		return false
 	}
 	return true

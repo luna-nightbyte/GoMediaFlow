@@ -9,7 +9,7 @@ Some future planned fueatures are
   - auto upload
 ## Setup
 
-1. **Modify `config.json`** to set up connection settings and to enable/disable the webcam. Folders can be set here, but it is also available to change in the UI.
+1. **Modify `settings.json`** to set up connection settings and to enable/disable the webcam. Folders can be set here, but it is also available to change in the UI.
 ```
   {
     "server": {
@@ -30,15 +30,15 @@ Some future planned fueatures are
       "files": {
         "source": {
           "folder": "/path/to/source",
-          "last": "/path/to/last/source"
+          "last": "updated/internally/by/app"
         },
         "target": {
           "folder": "/path/to/target",
-          "last": "/path/to/last/target"
+          "last": "updated/internally/by/app"
         },
         "output": {
           "folder": "/path/to/output",
-          "last": "/path/to/last/output"
+          "last": "updated/internally/by/app"
         }
       }
     }
@@ -59,7 +59,7 @@ Some future planned fueatures are
     go run main.go
     ```
 
-    This will start the server on the port set in `config.json`.
+    This will start the server on the port set in `settings.json`.
     This will start the GoStreamer UI.
 
 ## Usage
