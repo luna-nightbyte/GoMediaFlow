@@ -19,7 +19,10 @@ GoStreamer is a tool for streaming and processing video frames from a webcam or 
         },
         "source_folder": "sources",
         "target_folder": "targets",
-        "output_folder": "output"
+        "output_folder": "output",
+        "last_source": "",
+        "last_target": "",
+        "last_swapped": ""
       }
     }
     ```
