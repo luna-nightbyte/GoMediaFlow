@@ -1,18 +1,32 @@
 {
   "server": {
-    "ip": "192.168.1.2",
-    "port": 8050
+    "network": {
+      "ip": "192.168.1.10",
+      "port": 8080
+    }
   },
-  "local": {
+  "client": {
+    "network": {
+      "ip": "192.168.1.2",
+      "port": 8081
+    },
     "webcam": {
       "enable": false,
       "target": "-1"
     },
-    "source_folder": "sources",
-    "target_folder": "targets",
-    "output_folder": "output",
-    "last_source": "",
-    "last_target": "",
-    "last_swapped": ""
+    "files": {
+      "source": {
+        "folder": "/path/to/source",
+        "last": "/path/to/last/source"
+      },
+      "target": {
+        "folder": "/path/to/target",
+        "last": "/path/to/last/target"
+      },
+      "output": {
+        "folder": "/path/to/output",
+        "last": "/path/to/last/output"
+      }
+    }
   }
 }

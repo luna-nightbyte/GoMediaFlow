@@ -2,7 +2,7 @@ package local
 
 import (
 	"errors"
-	"goStreamer/modules/config"
+	"goStreamer/modules/settings"
 	"log"
 	"net/http"
 	"os"
@@ -25,19 +25,19 @@ func (o *Output) Update(sourceFolder, targetFolder, outputFolder string) {
 	o.source.set(sourceFolder)
 	o.target.set(targetFolder)
 	o.output.set(outputFolder)
-	config.Config.Local.SourceFolder = sourceFolder
-	config.Config.Local.SourceFolder = targetFolder
-	config.Config.Local.SourceFolder = outputFolder
-	config.Config.Update()
+	settings.Settings.Client.Dir.Source.Folder = sourceFolder
+	settings.Settings.Client.Dir.Target.Folder = targetFolder
+	settings.Settings.Client.Dir.Output.Folder = outputFolder
+	settings.Settings.Update()
 }
 func (f *folder) set(input string) {
 	f.folder = input
 }
 func (o *Output) UpdateSingle(sourceFolder, webcamTarget string) {
 	o.source.folder = sourceFolder
-	config.Config.Local.SourceFolder = sourceFolder
-	config.Config.Local.Webcam.Target = webcamTarget
-	config.Config.Update()
+	settings.Settings.Client.Dir.Source.Folder = sourceFolder
+	settings.Settings.Client.Webcam.Target = webcamTarget
+	settings.Settings.Update()
 }
 
 // IsFile checks if the file is a video based on its MIME type.

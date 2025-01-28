@@ -5,14 +5,15 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"goStreamer/modules/config"
-	"goStreamer/modules/hardware/webcam"
 	"net"
 	"sync"
 	"time"
 
 	"github.com/hybridgroup/mjpeg"
 	"gocv.io/x/gocv"
+
+	"goStreamer/modules/hardware/webcam"
+	"goStreamer/modules/settings"
 )
 
 const (
@@ -32,7 +33,7 @@ type Client struct {
 }
 
 func (s *Server) GetFile(ctx context.Context) error {
-	if config.Config.Local.Webcam.Enable {
+	if settings.Settings.Client.Webcam.Enable {
 		return fmt.Errorf("%s", "Webcam enabled..")
 	}
 
@@ -63,13 +64,13 @@ func (s *Server) HandleIncomingCommands(ctx context.Context, webcam_source int) 
 		switch command {
 		// Server asks for the source again if it doesn't have it
 		case CommandSendSource:
-			if err := s.SendFile(command, config.Config.LastSource()); err != nil {
+			if err := s.SendFile(command, settings.Settings.Client.LastSource()); err != nil {
 				fmt.Printf("Error receiving source: %v\n", err)
 			}
 
 		case CommandSendTarget:
 			// Server asks for the target again if it doesn't have it
-			if err := s.SendFile(command, config.Config.LastTarget()); err != nil {
+			if err := s.SendFile(command, settings.Settings.Client.LastTarget()); err != nil {
 				fmt.Printf("Error receiving target: %v\n", err)
 			}
 

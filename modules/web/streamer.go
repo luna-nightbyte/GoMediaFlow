@@ -1,13 +1,14 @@
 package web
 
 import (
-	"goStreamer/modules/config"
-	"goStreamer/modules/hardware/webcam"
 	"log"
 	"net"
 	"sync"
 
 	"gocv.io/x/gocv"
+
+	"goStreamer/modules/hardware/webcam"
+	"goStreamer/modules/settings"
 )
 
 type FrameFeeder struct {
@@ -19,7 +20,7 @@ func (f *FrameFeeder) Start(wg *sync.WaitGroup, conn net.Conn) {
 	defer f.cleanup()
 
 	var window *gocv.Window
-	if config.Config.Local.Webcam.Enable {
+	if settings.Settings.Client.Webcam.Enable {
 		window = gocv.NewWindow("Camera Feed")
 		defer window.Close()
 	}
@@ -41,7 +42,7 @@ func (f *FrameFeeder) Start(wg *sync.WaitGroup, conn net.Conn) {
 		}
 
 		// Optionally display the frame
-		if config.Config.Local.Webcam.Enable && window != nil {
+		if settings.Settings.Client.Webcam.Enable && window != nil {
 			window.IMShow(frame.Mat)
 			if window.WaitKey(1) >= 0 {
 				break

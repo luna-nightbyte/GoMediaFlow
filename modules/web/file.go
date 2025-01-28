@@ -4,16 +4,18 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"goStreamer/modules/config"
 	"io"
 	"log"
 	"os"
 	"path/filepath"
 	"time"
+
+	"goStreamer/modules/settings"
 )
 
 // Header represents the metadata for a file transfer.
 type Header struct {
+	ClientIP string `json:"client_ip"`
 	Command  string `json:"command"`
 	FileName string `json:"file_name"`
 	FileSize int64  `json:"file_size"`
@@ -38,6 +40,7 @@ func (s *Server) SendFile(command, filePath string) error {
 
 	// Prepare header as JSON
 	header := Header{
+		ClientIP: settings.Settings.Client.Net.IP,
 		Command:  command,
 		FileName: stat.Name(),
 		FileSize: fileSize,
@@ -81,7 +84,7 @@ func (s *Server) ReceiveFile() (string, error) {
 		return "", fmt.Errorf("unknown filetype in header: %v", header)
 	}
 	// Create a new file locally to save the received data
-	outFilePath := filepath.Join(config.Config.Local.OutputFolder, header.FileName)
+	outFilePath := filepath.Join(settings.Settings.Client.Swapped(), header.FileName)
 	outFile, err := os.Create(outFilePath)
 	if err != nil {
 		return "", fmt.Errorf("failed to create output file: %v", err)
