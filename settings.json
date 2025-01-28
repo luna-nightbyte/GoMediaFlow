@@ -17,15 +17,15 @@
     "files": {
       "source": {
         "folder": "/path/to/source",
-        "last": "/path/to/last/source"
+        "last": ""
       },
       "target": {
         "folder": "/path/to/target",
-        "last": "/path/to/last/target"
+        "last": ""
       },
       "output": {
         "folder": "/path/to/output",
-        "last": "/path/to/last/output"
+        "last": ""
       }
     }
   }
