@@ -7,15 +7,11 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"os"
-	"path/filepath"
 	"strconv"
-	"time"
 
 	"goStreamer/modules/config"
-	"goStreamer/modules/hardware/webcam"
 	"goStreamer/modules/local"
 	"goStreamer/modules/ui"
 	"goStreamer/modules/web"
@@ -63,7 +59,10 @@ func main() {
 
 			server.Connect(config.Config.Server.IP, config.Config.Server.DialPort)
 			defer server.Conn.Close()
-			getFile(ctx)
+			err := server.GetFile(ctx)
+			if err != nil {
+				log.Println("Error getting file: ", err)
+			}
 		})
 		content = container.NewVBox(
 			sourceEntry, sourceButton,
