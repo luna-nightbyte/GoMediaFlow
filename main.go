@@ -69,7 +69,7 @@ func main() {
 	} else { // We got webcam
 		sourceEntry, sourceButton := ui.AddFileSelector("Select a source face", "Choose a file...")
 
-		webcamTarget := ui.AddOutputFilename("Filename", "Enter webgam target (default is usually 0)")
+		webcamTarget := ui.AddOutputFilename("Filename", "Enter webcam target (default is usually 0)")
 
 		submitButton := ui.AddSubmitButton("Submit", func() {
 
@@ -89,7 +89,5 @@ func main() {
 	}
 	// Start UI
 	ui.Run(content)
-
-	// Connection to the server running face swapper
 
 }
