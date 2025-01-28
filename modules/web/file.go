@@ -1,6 +1,7 @@
 package web
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"goStreamer/modules/config"
@@ -103,4 +104,21 @@ func (s *Server) Close() {
 		s.Conn.Close()
 	}
 	fmt.Println("Connection closed.")
+}
+
+func (s *Server) SendFileWithRetry(ctx context.Context, sendtype string, file string) {
+	ok := false
+	msg := "RETRY"
+	for msg == "RETRY" {
+		if err := s.SendFile(sendtype, file); err != nil {
+			log.Println("Error sending file:", err)
+		}
+		ok, msg = s.WaitForDone(ctx, make([]byte, 4096))
+		if ok {
+			fmt.Println("Finished sending file!")
+		}
+	}
+	if !ok {
+		fmt.Println("Error sending file")
+	}
 }
