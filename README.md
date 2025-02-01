@@ -1,4 +1,4 @@
-# GoStreamer
+# GoMediaFlow
 
 GoStreamer is a tool for streaming and processing video frames from a webcam or files. It allows you to configure the server connection, select source and target files or webcam, and receive processed output.
 
@@ -81,14 +81,13 @@ Some future planned fueatures are
 ## Future Features
 
 - **Webcam**:
-  1. Select webcam source
-  2. Select target face
-  3. Send target file to server
-  4. Feed webcam frames to server
-  5. Receive swapped webcam frames from server
+  - [ ] 1. Select webcam source
+  - [ ] 2. Feed webcam frames to server
+  - [ ] 3. Receive swapped webcam frames from server
 
 - **Files**:
-  1. Select source and target faces
-  2. Select local output path
-  3. Send target and source files to server
-  4. Receive swapped output file from server
+  - [x] 1. Select source and target faces
+  - [x] 2. Select local output path
+  - [x] 3. Send target and source files to server
+  - [x] 4. Receive swapped output file from server (manual)
+  - [ ] 5. Auto recieve processed file(s).
